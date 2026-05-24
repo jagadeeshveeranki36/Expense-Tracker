@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Reports - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" id="reports-container">
+    
+    <!-- 1. Stats Counter Cards Row -->
+    <div class="row g-4 mb-4">
+        <!-- Monthly Total -->
+        <div class="col-md-4 animate-entrance delay-1">
+            <div class="glass-card shadow-sm">
+                <span class="text-secondary font-weight-bold d-block small mb-2">Monthly Expenditure Log</span>
+                <h3 class="brand-font mb-0 text-primary" id="stat-monthly-total" style="font-weight: 700;">$0.00</h3>
+            </div>
+        </div>
+        
+        <!-- Daily Average -->
+        <div class="col-md-4 animate-entrance delay-2">
+            <div class="glass-card shadow-sm">
+                <span class="text-secondary font-weight-bold d-block small mb-2">Monthly Daily Average</span>
+                <h3 class="brand-font mb-0 text-primary" id="stat-daily-average" style="font-weight: 700;">$0.00</h3>
+            </div>
+        </div>
+        
+        <!-- Highest Category -->
+        <div class="col-md-4 animate-entrance delay-3">
+            <div class="glass-card shadow-sm">
+                <span class="text-secondary font-weight-bold d-block small mb-2">Highest Category Spent</span>
+                <h3 class="brand-font mb-0 text-primary fs-5 text-truncate" id="stat-highest-category" style="font-weight: 700; height: 30px; line-height: 30px;">Loading...</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Charts and Diagrams layouts -->
+    <div class="row g-4 mb-4">
+        <!-- Pie Category Breakdown -->
+        <div class="col-lg-5 animate-entrance delay-2">
+            <div class="glass-card shadow-sm h-100">
+                <h5 class="brand-font mb-4"><i class="bi bi-pie-chart me-2"></i> Category breakdown</h5>
+                <div style="position: relative; height: 260px;">
+                    <canvas id="pieCategoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Line Chart Trend -->
+        <div class="col-lg-7 animate-entrance delay-3">
+            <div class="glass-card shadow-sm h-100">
+                <h5 class="brand-font mb-4"><i class="bi bi-graph-up me-2"></i> Spending trend this month</h5>
+                <div style="position: relative; height: 260px;">
+                    <canvas id="lineDailyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <!-- Bar Monthly Spends -->
+        <div class="col-lg-7 animate-entrance delay-3">
+            <div class="glass-card shadow-sm h-100">
+                <h5 class="brand-font mb-4"><i class="bi bi-bar-chart-steps me-2"></i> Monthly comparison</h5>
+                <div style="position: relative; height: 260px;">
+                    <canvas id="barMonthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Asynchronous Budget Setting Card -->
+        <div class="col-lg-5 animate-entrance delay-4">
+            <div class="glass-card shadow-sm h-100">
+                <h5 class="brand-font mb-3"><i class="bi bi-piggy-bank me-2"></i> Set Category Budgets</h5>
+                <p class="text-secondary small mb-4">Setup monthly constraints per category. We will notify you on the dashboard when limits are crossed.</p>
+                
+                <form id="budget-api-form">
+                    <div class="form-group-custom">
+                        <label class="form-label-custom" for="budget-category">Choose Category</label>
+                        <select id="budget-category" class="form-control-custom" required>
+                            <option value="Food">🍔 Food</option>
+                            <option value="Travel">✈️ Travel</option>
+                            <option value="Shopping">🛍️ Shopping</option>
+                            <option value="Bills">💡 Bills</option>
+                            <option value="Entertainment">🎬 Entertainment</option>
+                            <option value="Healthcare">🏥 Healthcare</option>
+                            <option value="Education">📚 Education</option>
+                            <option value="Others">📦 Others</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group-custom">
+                        <label class="form-label-custom" for="budget-limit">Monthly Limit ({{ current_user.currency }})</label>
+                        <input type="number" step="0.01" min="0" id="budget-limit" class="form-control-custom" placeholder="e.g., 500.00" required>
+                    </div>
+                    
+                    <button type="submit" class="btn-premium w-100 mt-3">
+                        <i class="bi bi-save me-1"></i> Save limit constraint
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const budgetForm = document.getElementById('budget-api-form');
+        if (budgetForm) {
+            budgetForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const category = document.getElementById('budget-category').value;
+                const limit = document.getElementById('budget-limit').value;
+                
+                try {
+                    const response = await fetch('/api/budgets', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            // Fetch standard CSRF headers for Flask-WTF protection!
+                            'X-CSRFToken': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ category, limit })
+                    });
+                    
+                    const resData = await response.json();
+                    if (response.ok && resData.success) {
+                        window.createToast(`Successfully saved budget for ${category} to ${window.USER_CURRENCY_SYMBOL}${parseFloat(limit).toFixed(2)}!`, 'success');
+                        budgetForm.reset();
+                    } else {
+                        window.createToast(resData.error || 'Failed to save budget limit.', 'danger');
+                    }
+                } catch (err) {
+                    window.createToast('Network error while saving budget limit.', 'danger');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

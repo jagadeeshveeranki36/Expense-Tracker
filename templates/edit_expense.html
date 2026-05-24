@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Transaction - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 70vh;">
+    <div class="glass-card shadow-lg animate-entrance delay-2 w-100" style="max-width: 500px;">
+        <div class="text-center mb-4">
+            <i class="bi bi-pencil-square fs-1" style="color: var(--brand-primary);"></i>
+            <h2 class="h3 mt-2 brand-font">Edit Transaction</h2>
+            <p class="text-muted">Modify the details of your expense record</p>
+        </div>
+        
+        <form method="POST" action="{{ url_for('expense.edit_expense', id=expense.id) }}" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <div class="row">
+                <div class="col-7">
+                    <div class="form-group-custom">
+                        {{ form.amount.label(class="form-label-custom") }}
+                        {{ form.amount(class="form-control-custom" + (" is-invalid" if form.amount.errors else ""), placeholder="0.00") }}
+                        {% for error in form.amount.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-5">
+                    <div class="form-group-custom">
+                        {{ form.currency.label(class="form-label-custom") }}
+                        {{ form.currency(class="form-control-custom" + (" is-invalid" if form.currency.errors else "")) }}
+                        {% for error in form.currency.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group-custom">
+                {{ form.category.label(class="form-label-custom") }}
+                {{ form.category(class="form-control-custom" + (" is-invalid" if form.category.errors else "")) }}
+                {% for error in form.category.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <div class="form-group-custom">
+                {{ form.description.label(class="form-label-custom") }}
+                {{ form.description(class="form-control-custom" + (" is-invalid" if form.description.errors else ""), placeholder="Enter notes...") }}
+                {% for error in form.description.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <div class="form-group-custom">
+                {{ form.date.label(class="form-label-custom") }}
+                {{ form.date(class="form-control-custom" + (" is-invalid" if form.date.errors else ""), type="date") }}
+                {% for error in form.date.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <div class="d-flex gap-3 mt-4">
+                <a href="{{ url_for('expense.list_expenses') }}" class="btn-premium-outline w-50 py-3 text-center text-decoration-none">Cancel</a>
+                {{ form.submit(class="btn-premium w-50 py-3") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

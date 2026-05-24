@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Expense Tracker{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Manage your personal finances with a premium, state-of-the-art Expense Tracker featuring dynamic budgets, advanced Chart.js analytics, and full Excel/PDF reports exports.">
+    <meta name="author" content="Jagadeesh Veeranki">
+    
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    
+    <!-- Local Stylesheet Overrides -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/animations.css') }}" rel="stylesheet">
+    
+    <!-- Theme Manager (Executed immediately to block light flashing) -->
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script>
+        window.USER_CURRENCY_SYMBOL = "{{ current_user.currency_symbol if current_user.is_authenticated else '$' }}";
+    </script>
+</head>
+<body class="{% if current_user.is_authenticated %}user-logged-in{% else %}user-visitor{% endif %}">
+
+    <!-- Dynamic Toast Notification Alerts -->
+    <div class="toast-container-custom">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="toast-custom theme-{{ category }}">
+                        <div class="toast-icon">
+                            {% if category == 'success' %}✅
+                            {% elif category == 'danger' %}❌
+                            {% elif category == 'warning' %}🚨
+                            {% else %}💡
+                            {% endif %}
+                        </div>
+                        <div class="toast-msg">{{ message }}</div>
+                        <button class="toast-close" aria-label="Close Toast">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="app-container">
+        <!-- 1. Collapsible Desktop Sidebar (Only visible to authenticated users) -->
+        {% if current_user.is_authenticated %}
+        <nav class="sidebar" id="sidebar-navigation">
+            <a href="{{ url_for('dashboard.index') }}" class="sidebar-brand">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="sidebar-logo me-2" style="height: 36px; width: 36px; object-fit: contain; border-radius: 8px;">
+                <span class="brand-font fs-4">Expense Tracker</span>
+                <button type="button" class="btn-close d-lg-none ms-auto p-1 fs-6" id="sidebar-mobile-close" aria-label="Close Sidebar Menu" style="box-shadow: none; filter: var(--close-btn-filter, none);"></button>
+            </a>
+            
+            <ul class="sidebar-menu">
+                <li class="menu-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+                    <a href="{{ url_for('dashboard.index') }}">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                </li>
+                <li class="menu-item {% if request.endpoint == 'expense.list_expenses' %}active{% endif %}">
+                    <a href="{{ url_for('expense.list_expenses') }}">
+                        <i class="bi bi-cash-stack"></i> Expenses
+                    </a>
+                </li>
+                <li class="menu-item {% if request.endpoint == 'report.index' %}active{% endif %}">
+                    <a href="{{ url_for('report.index') }}">
+                        <i class="bi bi-pie-chart"></i> Reports &amp; Analytics
+                    </a>
+                </li>
+                <li class="menu-item {% if request.endpoint == 'auth.profile' %}active{% endif %}">
+                    <a href="{{ url_for('auth.profile') }}">
+                        <i class="bi bi-person-gear"></i> Profile Settings
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <a href="{{ url_for('auth.logout') }}" class="logout-btn">
+                    <i class="bi bi-box-arrow-left"></i> Logout
+                </a>
+            </div>
+        </nav>
+        {% endif %}
+
+        <!-- 2. Main content space -->
+        <main class="main-content">
+            <!-- Topbar Header actions -->
+            <div class="topbar animate-entrance delay-1">
+                <div class="d-flex align-items-center gap-3">
+                    {% if current_user.is_authenticated %}
+                        <button class="btn btn-link text-primary d-lg-none p-0 border-0 fs-3" id="sidebar-mobile-toggle" style="box-shadow: none;" aria-label="Open Sidebar Menu">
+                            <i class="bi bi-list"></i>
+                        </button>
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="topbar-logo d-lg-none" style="height: 36px; width: 36px; object-fit: contain; border-radius: 8px;">
+                    {% else %}
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="topbar-logo" style="height: 36px; width: 36px; object-fit: contain; border-radius: 8px;">
+                    {% endif %}
+                    <div>
+                        {% if current_user.is_authenticated %}
+                            <h1 class="h3 mb-0 brand-font">Hello, {{ current_user.username|title }}</h1>
+                            <p class="mb-0 text-muted">Keep tracking your expenses effortlessly.</p>
+                        {% else %}
+                            <h1 class="h3 mb-0 brand-font">Expense Tracker</h1>
+                            <p class="mb-0 text-muted">Intelligent, lightweight budget management.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="topbar-actions">
+                    <!-- Light/Dark Mode toggle button -->
+                    <button class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Toggle Theme">
+                        <i class="bi bi-moon-fill"></i>
+                    </button>
+                    
+                    {% if current_user.is_authenticated %}
+                        <!-- Premium Google-Style Multi-Account Switcher Dropdown -->
+                        <div class="dropdown">
+                            <button class="btn btn-link d-flex align-items-center gap-2 text-decoration-none border-0 p-0 dropdown-toggle text-primary" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow: none;">
+                                <img src="{{ url_for('static', filename='images/' + current_user.profile_pic) }}" 
+                                     class="user-avatar-sm border border-2 border-primary" 
+                                     style="border-color: var(--brand-primary) !important;"
+                                     alt="User profile picture">
+                                <div class="d-none d-sm-flex flex-column align-items-start text-start" style="line-height: 1.2;">
+                                    <span class="fw-semibold text-truncate" style="color: var(--text-primary); max-width: 120px;">{{ current_user.username }}</span>
+                                    <span class="text-secondary small" style="font-size: 0.7rem;">{{ current_user.bank_name or 'Primary Bank' }}</span>
+                                </div>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border border-light-subtle rounded-3 p-3" aria-labelledby="userDropdown" style="width: 320px; max-width: 90vw;">
+                                <!-- Current Active Account Info -->
+                                <li class="text-center py-2 px-1 border-bottom border-light-subtle mb-2">
+                                    <div class="position-relative d-inline-block mb-2">
+                                        <img src="{{ url_for('static', filename='images/' + current_user.profile_pic) }}" 
+                                             class="border border-3 border-primary rounded-circle" 
+                                             style="width: 64px; height: 64px; object-fit: cover;"
+                                             alt="User profile picture">
+                                    </div>
+                                    <div class="fw-bold brand-font" style="color: var(--text-primary);">{{ current_user.username }}</div>
+                                    <div class="text-secondary small mb-1">{{ current_user.email }}</div>
+                                    <span class="badge bg-primary-subtle text-primary small py-1 px-2 border border-primary-subtle" style="background-color: rgba(79, 70, 229, 0.1);">
+                                        <i class="bi bi-bank me-1"></i> {{ current_user.bank_name or 'Primary Bank' }}
+                                    </span>
+                                </li>
+                                
+                                <!-- Other Logged-in Accounts -->
+                                {% if active_accounts|length > 1 %}
+                                    <li class="dropdown-header text-uppercase tracking-wider px-2 py-1 mb-1" style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">
+                                        Switch Bank Accounts
+                                    </li>
+                                    {% for account in active_accounts %}
+                                        {% if account.id != current_user.id %}
+                                            <li>
+                                                <a class="dropdown-item py-2 px-2 rounded-2 d-flex align-items-center gap-2 mb-1" href="{{ url_for('auth.switch_account', user_id=account.id) }}">
+                                                    <img src="{{ url_for('static', filename='images/' + account.profile_pic) }}" 
+                                                         class="rounded-circle border border-light-subtle" 
+                                                         style="width: 32px; height: 32px; object-fit: cover;"
+                                                         alt="{{ account.username }}">
+                                                    <div class="d-flex flex-column align-items-start text-start" style="line-height: 1.2;">
+                                                        <span class="fw-semibold text-truncate small" style="color: var(--text-primary);">{{ account.username }}</span>
+                                                        <span class="text-secondary" style="font-size: 0.65rem;">{{ account.bank_name or 'Primary Bank' }}</span>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <li><hr class="dropdown-divider my-2"></li>
+                                {% endif %}
+                                
+                                <!-- Quick Actions & Management -->
+                                <li>
+                                    <a class="dropdown-item py-2 px-2 small d-flex align-items-center gap-2 rounded-2" href="{{ url_for('auth.profile') }}">
+                                        <i class="bi bi-person-gear fs-6 text-secondary"></i> Profile Settings
+                                    </a>
+                                </li>
+                                {% if active_accounts|length < 5 %}
+                                    <li>
+                                        <a class="dropdown-item py-2 px-2 small d-flex align-items-center gap-2 rounded-2 text-indigo fw-semibold" href="{{ url_for('auth.login') }}?add_account=1" style="color: var(--brand-primary) !important;">
+                                            <i class="bi bi-plus-circle-fill fs-6"></i> Add Bank Account
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider my-2"></li>
+                                <li>
+                                    <a class="dropdown-item py-2 px-2 small d-flex align-items-center gap-2 text-danger rounded-2" href="{{ url_for('auth.logout') }}">
+                                        <i class="bi bi-box-arrow-left fs-6"></i> Sign Out Current Account
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2 px-2 small d-flex align-items-center gap-2 text-danger fw-semibold bg-danger-subtle bg-opacity-10 rounded-2 mt-1" href="{{ url_for('auth.logout_all') }}">
+                                        <i class="bi bi-x-circle fs-6"></i> Sign Out All Accounts
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('auth.login') }}" class="btn-premium-outline btn-sm py-2 px-3">Login</a>
+                            <a href="{{ url_for('auth.register') }}" class="btn-premium btn-sm py-2 px-3">Sign Up</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- 3. Mobile Responsive Bottom Navigation (Only visible to authenticated users on smaller viewports) -->
+    {% if current_user.is_authenticated %}
+    <nav class="bottom-nav d-flex d-lg-none" aria-label="Mobile Bottom Nav">
+        <a href="{{ url_for('dashboard.index') }}" class="bottom-nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('expense.list_expenses') }}" class="bottom-nav-item {% if request.endpoint == 'expense.list_expenses' %}active{% endif %}">
+            <i class="bi bi-cash-stack"></i>
+            <span>Expenses</span>
+        </a>
+        <a href="#" class="bottom-nav-item open-expense-modal-btn" style="position: relative;">
+            <i class="bi bi-plus-circle-fill" style="font-size: 1.5rem; color: var(--brand-primary) !important;"></i>
+            <span>Add</span>
+        </a>
+        <a href="{{ url_for('report.index') }}" class="bottom-nav-item {% if request.endpoint == 'report.index' %}active{% endif %}">
+            <i class="bi bi-pie-chart"></i>
+            <span>Charts</span>
+        </a>
+        <a href="{{ url_for('auth.profile') }}" class="bottom-nav-item {% if request.endpoint == 'auth.profile' %}active{% endif %}">
+            <i class="bi bi-person-gear"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
+    {% endif %}
+
+    <!-- Global Quick Add Expense Modal Dialog -->
+    {% if current_user.is_authenticated %}
+    <div class="modal-custom" id="expenseModal">
+        <div class="modal-dialog-custom">
+            <div class="modal-header-custom">
+                <h5 class="modal-title brand-font mb-0"><i class="bi bi-cash me-2"></i> Record Expenditure</h5>
+                <button type="button" class="modal-close-btn close-expense-modal-btn">&times;</button>
+            </div>
+            
+            <form method="POST" action="{{ url_for('expense.add_expense') }}">
+                {{ quick_expense_form.hidden_tag() }}
+                <div class="modal-body-custom">
+                    <div class="row">
+                        <div class="col-7">
+                            <div class="form-group-custom">
+                                {{ quick_expense_form.amount.label(class="form-label-custom") }}
+                                {{ quick_expense_form.amount(class="form-control-custom", placeholder="0.00") }}
+                            </div>
+                        </div>
+                        <div class="col-5">
+                            <div class="form-group-custom">
+                                {{ quick_expense_form.currency.label(class="form-label-custom") }}
+                                {{ quick_expense_form.currency(class="form-control-custom") }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group-custom">
+                        {{ quick_expense_form.category.label(class="form-label-custom") }}
+                        {{ quick_expense_form.category(class="form-control-custom") }}
+                    </div>
+                    
+                    <div class="form-group-custom">
+                        {{ quick_expense_form.description.label(class="form-label-custom") }}
+                        {{ quick_expense_form.description(class="form-control-custom", placeholder="Enter notes...") }}
+                    </div>
+                    
+                    <div class="form-group-custom">
+                        {{ quick_expense_form.date.label(class="form-label-custom") }}
+                        {{ quick_expense_form.date(class="form-control-custom", type="date") }}
+                    </div>
+                    
+                    {{ quick_expense_form.submit(class="btn-premium w-100 py-3 mt-3") }}
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Bootstrap 5 JS Bundle, Chart.js and Custom Interactivity JS files -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+</body>
+</html>

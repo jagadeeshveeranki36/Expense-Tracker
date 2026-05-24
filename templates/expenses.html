@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Expenses Log - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="row g-4">
+        <!-- 1. Left Filtering Sidebar Column -->
+        <div class="col-lg-3 animate-entrance delay-2">
+            <div class="glass-card shadow-sm mb-4">
+                <h5 class="brand-font mb-3"><i class="bi bi-filter-square me-2"></i> Refine Filter</h5>
+                
+                <form method="GET" action="{{ url_for('expense.list_expenses') }}">
+                    <div class="form-group-custom">
+                        <label class="form-label-custom" for="search-input">Search Description</label>
+                        <input type="text" name="search" id="client-live-search" class="form-control-custom" placeholder="Live matches..." value="{{ search_query }}">
+                    </div>
+                    
+                    <div class="form-group-custom">
+                        <label class="form-label-custom" for="category-filter">Category</label>
+                        <select name="category" id="category-filter" class="form-control-custom">
+                            <option value="">All Categories</option>
+                            {% for val, name in categories %}
+                                <option value="{{ val }}" {% if selected_category == val %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group-custom">
+                        <label class="form-label-custom" for="date-from-filter">Date From</label>
+                        <input type="date" name="date_from" id="date-from-filter" class="form-control-custom" value="{{ date_from }}">
+                    </div>
+                    
+                    <div class="form-group-custom">
+                        <label class="form-label-custom" for="date-to-filter">Date To</label>
+                        <input type="date" name="date_to" id="date-to-filter" class="form-control-custom" value="{{ date_to }}">
+                    </div>
+                    
+                    <div class="form-group-custom">
+                        <label class="form-label-custom" for="sort-filter">Sort By</label>
+                        <select name="sort" id="sort-filter" class="form-control-custom">
+                            <option value="latest" {% if sort_order == 'latest' %}selected{% endif %}>Latest Date</option>
+                            <option value="oldest" {% if sort_order == 'oldest' %}selected{% endif %}>Oldest Date</option>
+                            <option value="highest" {% if sort_order == 'highest' %}selected{% endif %}>Highest Amount</option>
+                            <option value="lowest" {% if sort_order == 'lowest' %}selected{% endif %}>Lowest Amount</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-flex flex-column gap-2 mt-4">
+                        <button type="submit" class="btn-premium w-100"><i class="bi bi-search me-1"></i> Apply filters</button>
+                        <a href="{{ url_for('expense.list_expenses') }}" class="btn-premium-outline w-100 text-center"><i class="bi bi-x-circle me-1"></i> Clear all</a>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- 2. CSV Import widget block -->
+            <div class="glass-card shadow-sm">
+                <h5 class="brand-font mb-3"><i class="bi bi-cloud-upload me-2"></i> CSV Import</h5>
+                <form method="POST" action="{{ url_for('expense.import_csv') }}" enctype="multipart/form-data">
+                    <!-- CSRF Protection via Flask-WTF template binding -->
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="form-group-custom">
+                        <input type="file" name="file" class="form-control-custom" accept=".csv" required aria-label="Upload CSV file">
+                    </div>
+                    <button type="submit" class="btn-premium-outline btn-sm w-100 mt-2">
+                        <i class="bi bi-box-arrow-in-down me-1"></i> Upload data log
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 3. Right Expenses List Column -->
+        <div class="col-lg-9 animate-entrance delay-3">
+            <div class="glass-card shadow-sm h-100 d-flex flex-column">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+                    <h5 class="mb-0 brand-font"><i class="bi bi-journal-text me-2"></i> Ledger Log History</h5>
+                    
+                    <!-- Action exports -->
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('expense.export_csv') }}" class="btn-premium-outline btn-sm d-flex align-items-center gap-1">
+                            <i class="bi bi-filetype-csv"></i> CSV
+                        </a>
+                        <a href="{{ url_for('expense.export_excel') }}" class="btn-premium-outline btn-sm d-flex align-items-center gap-1">
+                            <i class="bi bi-file-earmark-excel"></i> Excel
+                        </a>
+                        <a href="{{ url_for('expense.export_pdf') }}" class="btn-premium-outline btn-sm d-flex align-items-center gap-1">
+                            <i class="bi bi-file-earmark-pdf"></i> PDF
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="table-responsive-custom flex-grow-1 mb-4">
+                    <table class="table-custom">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th class="text-center" style="width: 100px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for exp in expenses %}
+                            <tr class="expense-row">
+                                <td class="fw-semibold expense-cat">
+                                    {% if exp.category == 'Food' %}🍔 Food
+                                    {% elif exp.category == 'Travel' %}✈️ Travel
+                                    {% elif exp.category == 'Shopping' %}🛍️ Shopping
+                                    {% elif exp.category == 'Bills' %}💡 Bills
+                                    {% elif exp.category == 'Entertainment' %}🎬 Entertainment
+                                    {% elif exp.category == 'Healthcare' %}🏥 Healthcare
+                                    {% elif exp.category == 'Education' %}📚 Education
+                                    {% else %}📦 Others
+                                    {% endif %}
+                                </td>
+                                <td class="expense-desc">{{ exp.description or '-' }}</td>
+                                <td>{{ exp.date.strftime('%Y-%m-%d') }}</td>
+                                <td class="fw-bold text-danger" style="color: var(--brand-danger);">
+                                    {{ exp.currency_symbol }}{{ "%.2f"|format(exp.original_amount) }}
+                                    {% if exp.currency != current_user.currency %}
+                                        <span class="text-muted d-block fw-normal" style="font-size: 0.75rem;">
+                                            ({{ current_user.currency_symbol }}{{ "%.2f"|format(exp.amount) }} {{ current_user.currency }})
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <a href="{{ url_for('expense.edit_expense', id=exp.id) }}" class="btn btn-sm btn-outline-secondary py-1 px-2 rounded-3 border-0" aria-label="Edit Expense">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </a>
+                                        <form method="POST" action="{{ url_for('expense.delete_expense', id=exp.id) }}" onsubmit="return confirm('Are you sure you want to delete this expense record?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2 rounded-3 border-0" aria-label="Delete Expense">
+                                                <i class="bi bi-trash3"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-2 d-block mb-2"></i> No expenses matched your filtering options.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination links controls -->
+                {% if pagination.pages > 1 %}
+                <nav aria-label="Expenses navigation pagination" class="mt-auto">
+                    <ul class="pagination justify-content-center gap-1">
+                        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                            <a class="page-link border-0 rounded-3 text-secondary" href="{{ url_for('expense.list_expenses', page=pagination.prev_num, category=selected_category, search=search_query, date_from=date_from, date_to=date_to, sort=sort_order) }}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        
+                        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                            {% if page_num %}
+                                <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                    <a class="page-link border-0 rounded-3 {% if page_num == pagination.page %}btn-premium py-2 px-3{% else %}text-secondary py-2 px-3{% endif %}" href="{{ url_for('expense.list_expenses', page=page_num, category=selected_category, search=search_query, date_from=date_from, date_to=date_to, sort=sort_order) }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link border-0">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                            <a class="page-link border-0 rounded-3 text-secondary" href="{{ url_for('expense.list_expenses', page=pagination.next_num, category=selected_category, search=search_query, date_from=date_from, date_to=date_to, sort=sort_order) }}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

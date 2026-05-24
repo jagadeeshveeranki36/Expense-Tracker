@@ -1,0 +1,122 @@
+/* Custom CSS Animations - Anti-Gravity floating and micro-interactions */
+
+/* 1. Floating Cards Animation (Anti-Gravity Theme) */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-12px);
+    }
+}
+
+.card-float {
+    position: relative;
+    z-index: 5;
+    animation: float 5s ease-in-out infinite;
+}
+
+/* Staggered Delays for Floating Cards */
+.card-float:nth-child(1) { animation-delay: 0s; }
+.card-float:nth-child(2) { animation-delay: 0.7s; }
+.card-float:nth-child(3) { animation-delay: 1.4s; }
+.card-float:nth-child(4) { animation-delay: 2.1s; }
+
+
+/* 2. Entrance Animation (Fade + Slide Up) */
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-entrance {
+    animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Staggered entrance delays */
+.delay-1 { animation-delay: 0.1s; opacity: 0; animation-fill-mode: forwards; }
+.delay-2 { animation-delay: 0.2s; opacity: 0; animation-fill-mode: forwards; }
+.delay-3 { animation-delay: 0.3s; opacity: 0; animation-fill-mode: forwards; }
+.delay-4 { animation-delay: 0.4s; opacity: 0; animation-fill-mode: forwards; }
+.delay-5 { animation-delay: 0.5s; opacity: 0; animation-fill-mode: forwards; }
+
+
+/* 3. Skeleton Loading Shimmer Effect */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.skeleton-shimmer {
+    background: linear-gradient(90deg, 
+        rgba(148, 163, 184, 0.08) 25%, 
+        rgba(148, 163, 184, 0.18) 37%, 
+        rgba(148, 163, 184, 0.08) 63%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+    border-radius: 8px;
+    height: 18px;
+    width: 100%;
+}
+
+
+/* 4. Pulse Animation (e.g., for Floating Action Button or Notifications) */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.5);
+    }
+    70% {
+        box-shadow: 0 0 0 12px rgba(79, 70, 229, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+    }
+}
+
+.animate-pulse-glow {
+    animation: pulse 2s infinite;
+}
+
+
+/* 5. Ripple Effect styling (triggered by JS) */
+.ripple {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 50%;
+    transform: scale(0);
+    animation: ripple-effect 0.6s linear;
+    pointer-events: none;
+}
+
+@keyframes ripple-effect {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+
+/* 6. Glow pulse animation for dashboard cards */
+@keyframes glowPulse {
+    0%, 100% {
+        box-shadow: var(--shadow-md);
+    }
+    50% {
+        box-shadow: var(--shadow-lg), var(--shadow-glow);
+    }
+}
+
+.card-glowing {
+    animation: glowPulse 3s infinite ease-in-out;
+}

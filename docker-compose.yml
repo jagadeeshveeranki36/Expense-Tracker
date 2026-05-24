@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: antigravity_expense_tracker
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=prod
+      - SECRET_KEY=secure-production-docked-key-987654321
+      - WTF_CSRF_SECRET_KEY=secure-production-docked-csrf-key-12345
+    volumes:
+      - sqlite_data:/app/database
+    restart: always
+
+volumes:
+  sqlite_data:

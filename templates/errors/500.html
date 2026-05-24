@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error - Antigravity Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container d-flex flex-column align-items-center justify-content-center text-center" style="min-height: 70vh;">
+    <div class="glass-card shadow-lg animate-entrance delay-2 p-5 w-100" style="max-width: 550px;">
+        <span class="display-1 fw-bold brand-font d-block" style="background: linear-gradient(135deg, var(--brand-danger), var(--brand-warning)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">500</span>
+        <h2 class="h3 brand-font my-3">Gravitational Collapse</h2>
+        <p class="text-secondary mb-4">An unexpected server error occurred and broke our database gravity field. Our team of engineering technicians has been alerted.</p>
+        <a href="{{ url_for('dashboard.index') }}" class="btn-premium py-3 px-4">
+            <i class="bi bi-arrow-counterclockwise me-2"></i> Try dashboard again
+        </a>
+    </div>
+</div>
+{% endblock %}

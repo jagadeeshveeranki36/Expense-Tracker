@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    
+    <!-- 1. Overspending Budget warning blocks (Custom Banner style) -->
+    {% if overspent_categories %}
+    <div class="row mb-4 animate-entrance delay-2">
+        <div class="col-12">
+            <div class="glass-card shadow-sm border border-danger-subtle p-3 rounded-4" style="background-color: rgba(239, 68, 68, 0.05);">
+                <h5 class="text-danger mb-2 brand-font"><i class="bi bi-exclamation-triangle-fill me-2"></i> Monthly Budget Alerts</h5>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for cat in overspent_categories %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill small">
+                            {{ cat.icon }} {{ cat.category }} exceeded limit by <strong>{{ current_user.currency_symbol }}{{ "%.2f"|format(cat.excess) }}</strong> (Limit: {{ current_user.currency_symbol }}{{ "%.2f"|format(cat.limit) }})
+                        </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 2. Statistics Stat Cards Grid (with Staggered Anti-Gravity Animations) -->
+    <div class="row g-4 mb-4">
+        <!-- Card 1: Total Expenses -->
+        <div class="col-12 col-sm-6 col-xl-3 animate-entrance delay-1">
+            <div class="glass-card card-float shadow-sm h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-secondary font-weight-bold">Total Expenses</span>
+                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="background-color: rgba(79, 70, 229, 0.1); width: 40px; height: 40px;">
+                        <i class="bi bi-wallet2 text-indigo" style="color: var(--brand-primary);"></i>
+                    </div>
+                </div>
+                <h3 class="brand-font mb-1 text-primary animate-counter" data-target="{{ total_expenses }}" data-prefix="{{ current_user.currency_symbol }}">{{ current_user.currency_symbol }}0.00</h3>
+                <span class="text-muted small">All-time tracked log</span>
+            </div>
+        </div>
+
+        <!-- Card 2: Current Month -->
+        <div class="col-12 col-sm-6 col-xl-3 animate-entrance delay-2">
+            <div class="glass-card card-float shadow-sm h-100" style="animation-delay: 0.5s;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-secondary font-weight-bold">This Month's Spending</span>
+                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="background-color: rgba(6, 182, 212, 0.1); width: 40px; height: 40px;">
+                        <i class="bi bi-calendar-event text-cyan" style="color: var(--brand-secondary);"></i>
+                    </div>
+                </div>
+                <h3 class="brand-font mb-1 text-primary animate-counter" data-target="{{ monthly_total }}" data-prefix="{{ current_user.currency_symbol }}">{{ current_user.currency_symbol }}0.00</h3>
+                <span class="text-muted small">Current month log</span>
+            </div>
+        </div>
+
+        <!-- Card 3: Daily Average -->
+        <div class="col-12 col-sm-6 col-xl-3 animate-entrance delay-3" style="animation-delay: 1s;">
+            <div class="glass-card card-float shadow-sm h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-secondary font-weight-bold">Daily Average</span>
+                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="background-color: rgba(16, 185, 129, 0.1); width: 40px; height: 40px;">
+                        <i class="bi bi-calculator text-emerald" style="color: var(--brand-success);"></i>
+                    </div>
+                </div>
+                <h3 class="brand-font mb-1 text-primary animate-counter" data-target="{{ daily_average }}" data-prefix="{{ current_user.currency_symbol }}">{{ current_user.currency_symbol }}0.00</h3>
+                <span class="text-muted small">Monthly daily average</span>
+            </div>
+        </div>
+
+        <!-- Card 4: Top Category -->
+        <div class="col-12 col-sm-6 col-xl-3 animate-entrance delay-4" style="animation-delay: 1.5s;">
+            <div class="glass-card card-float shadow-sm h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-secondary font-weight-bold">Top Expenditure</span>
+                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="background-color: rgba(239, 68, 68, 0.1); width: 40px; height: 40px;">
+                        <i class="bi bi-graph-up-arrow text-danger" style="color: var(--brand-danger);"></i>
+                    </div>
+                </div>
+                <h3 class="brand-font mb-1 text-primary text-truncate fs-4" style="font-weight: 700;">
+                    {% if highest_cat != "None" %}
+                        {{ highest_cat }}
+                    {% else %}
+                        None
+                    {% endif %}
+                </h3>
+                <span class="text-muted small">
+                    {% if highest_cat != "None" %}
+                        {{ current_user.currency_symbol }}{{ "%.2f"|format(highest_amt) }} this month
+                    {% else %}
+                        No monthly expenses yet
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- 3. Dashboard Breakdown Columns -->
+    <div class="row g-4">
+        <!-- Left: Category limits progress bars -->
+        <div class="col-lg-6 animate-entrance delay-3">
+            <div class="glass-card shadow-sm h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0 brand-font"><i class="bi bi-sliders me-2"></i> Budget Limits Status</h5>
+                    <a href="{{ url_for('report.index') }}" class="small text-decoration-none" style="color: var(--brand-primary); font-weight: 600;">Configure limits</a>
+                </div>
+                
+                <div class="d-flex flex-column gap-3">
+                    {% for cat in category_summary %}
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2 small">
+                            <span class="fw-semibold">{{ cat.icon }} {{ cat.name }}</span>
+                            <span class="text-muted">
+                                <strong>{{ current_user.currency_symbol }}{{ "%.2f"|format(cat.spend) }}</strong> 
+                                {% if cat.limit > 0 %}
+                                    of {{ current_user.currency_symbol }}{{ "%.2f"|format(cat.limit) }} ({{ cat.percent }}%)
+                                {% else %}
+                                    (No limit configured)
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="progress-custom">
+                            {% if cat.limit > 0 %}
+                                {% if cat.percent >= 100 %}
+                                    <div class="progress-bar-custom" style="width: 100%; background-color: var(--brand-danger);"></div>
+                                {% elif cat.percent >= 80 %}
+                                    <div class="progress-bar-custom" style="width: {{ cat.percent }}%; background-color: var(--brand-warning);"></div>
+                                {% else %}
+                                    <div class="progress-bar-custom" style="width: {{ cat.percent }}%; background-color: var(--brand-success);"></div>
+                                {% endif %}
+                            {% else %}
+                                <div class="progress-bar-custom" style="width: 0%; background-color: var(--text-muted);"></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Recent Transactions -->
+        <div class="col-lg-6 animate-entrance delay-4">
+            <div class="glass-card shadow-sm h-100 d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0 brand-font"><i class="bi bi-receipt-cutoff me-2"></i> Recent Transactions</h5>
+                    <a href="{{ url_for('expense.list_expenses') }}" class="small text-decoration-none" style="color: var(--brand-primary); font-weight: 600;">View Ledger History</a>
+                </div>
+
+                <div class="table-responsive-custom flex-grow-1">
+                    <table class="table-custom">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Date</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for exp in recent_transactions %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    {% if exp.category == 'Food' %}🍔 Food
+                                    {% elif exp.category == 'Travel' %}✈️ Travel
+                                    {% elif exp.category == 'Shopping' %}🛍️ Shopping
+                                    {% elif exp.category == 'Bills' %}💡 Bills
+                                    {% elif exp.category == 'Entertainment' %}🎬 Entertainment
+                                    {% elif exp.category == 'Healthcare' %}🏥 Healthcare
+                                    {% elif exp.category == 'Education' %}📚 Education
+                                    {% else %}📦 Others
+                                    {% endif %}
+                                </td>
+                                <td>{{ exp.description or '-' }}</td>
+                                <td>{{ exp.date.strftime('%Y-%m-%d') }}</td>
+                                <td class="fw-bold text-end text-danger" style="color: var(--brand-danger);">
+                                    {{ exp.currency_symbol }}{{ "%.2f"|format(exp.original_amount) }}
+                                    {% if exp.currency != current_user.currency %}
+                                        <span class="text-muted d-block fw-normal" style="font-size: 0.75rem;">
+                                            ({{ current_user.currency_symbol }}{{ "%.2f"|format(exp.amount) }} {{ current_user.currency }})
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">No expenses recorded yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Quick Add Floating Action Button (FAB) -->
+<button class="fab-btn animate-pulse-glow open-expense-modal-btn" aria-label="Add Expense floating button">
+    <i class="bi bi-plus-lg fs-4"></i>
+</button>
+{% endblock %}

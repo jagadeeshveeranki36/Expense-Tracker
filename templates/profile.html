@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Profile Settings - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Page Header -->
+    <div class="mb-4 animate-entrance">
+        <h2 class="brand-font h3">Settings</h2>
+        <p class="text-secondary small">Manage your security credentials, customizable look, and data operations</p>
+    </div>
+
+    <!-- 1. Dynamic Stats Grid Row -->
+    <div class="row g-3 mb-4 animate-entrance delay-1">
+        <div class="col-md-4">
+            <div class="glass-card shadow-sm d-flex align-items-center gap-3 py-3 px-4 h-100">
+                <div class="rounded-circle d-flex align-items-center justify-content-center bg-indigo-subtle" style="width: 48px; height: 48px; background-color: rgba(79, 70, 229, 0.1);">
+                    <i class="bi bi-receipt text-indigo fs-4" style="color: var(--brand-primary);"></i>
+                </div>
+                <div>
+                    <span class="text-secondary small d-block">Logged Transactions</span>
+                    <h4 class="mb-0 brand-font fw-bold text-indigo" style="color: var(--brand-primary);">{{ total_logs }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="glass-card shadow-sm d-flex align-items-center gap-3 py-3 px-4 h-100">
+                <div class="rounded-circle d-flex align-items-center justify-content-center bg-success-subtle" style="width: 48px; height: 48px; background-color: rgba(16, 185, 129, 0.1);">
+                    <i class="bi bi-cash-coin text-success fs-4" style="color: var(--brand-success);"></i>
+                </div>
+                <div>
+                    <span class="text-secondary small d-block">Monthly Spent</span>
+                    <h4 class="mb-0 brand-font fw-bold text-success" style="color: var(--brand-success);">{{ current_user.currency_symbol }}{{ "{:,.2f}".format(monthly_spent) }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="glass-card shadow-sm d-flex align-items-center gap-3 py-3 px-4 h-100">
+                <div class="rounded-circle d-flex align-items-center justify-content-center bg-warning-subtle" style="width: 48px; height: 48px; background-color: rgba(245, 158, 11, 0.1);">
+                    <i class="bi bi-sliders text-warning fs-4" style="color: var(--brand-warning);"></i>
+                </div>
+                <div>
+                    <span class="text-secondary small d-block">Active Budgets</span>
+                    <h4 class="mb-0 brand-font fw-bold text-warning" style="color: var(--brand-warning);">{{ active_budgets }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Settings Form Container -->
+    <div class="row g-4 animate-entrance delay-2">
+        <!-- Main Column: Personal details and Avatar customization -->
+        <div class="col-lg-8 mx-auto d-flex flex-column gap-4">
+            <!-- Form covering avatar, username, email, and password changes -->
+            <form method="POST" action="{{ url_for('auth.profile') }}" enctype="multipart/form-data" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="profile_pic" id="profile_pic_input" value="{{ current_user.profile_pic }}">
+
+                <!-- CARD 1: Profile Avatar Customization -->
+                <div class="glass-card shadow-sm mb-4">
+                    <div class="d-flex align-items-center gap-3 mb-3 border-bottom pb-2">
+                        <i class="bi bi-image fs-4 text-indigo" style="color: var(--brand-primary);"></i>
+                        <h5 class="mb-0 brand-font">Appearance Customization</h5>
+                    </div>
+                    <div class="row g-4 align-items-center">
+                        <!-- Left Column: Circular avatar with overlay camera icon -->
+                        <div class="col-md-4 text-center">
+                            <div class="position-relative d-inline-block">
+                                <img src="{{ url_for('static', filename='images/' + current_user.profile_pic) }}" 
+                                     id="selected-avatar-display" 
+                                     class="avatar-img-lg border border-3 mb-2 rounded-circle img-thumbnail" 
+                                     style="border-color: var(--brand-primary) !important; width: 140px; height: 140px; object-fit: cover;"
+                                     alt="Selected avatar display">
+                                <label for="avatar_file" class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2 d-flex align-items-center justify-content-center shadow" style="cursor: pointer; width: 38px; height: 38px; transform: translate(-10%, -10%); transition: all 0.2s ease;">
+                                    <i class="bi bi-camera-fill text-white fs-5"></i>
+                                </label>
+                                <input type="file" name="avatar_file" id="avatar_file" class="d-none" accept="image/*">
+                            </div>
+                            <span class="text-secondary small d-block mt-2">Live Avatar Preview</span>
+                        </div>
+                        <!-- Right Column: Device selection & Presets -->
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="avatar_file" class="btn btn-outline-primary btn-sm mb-2 w-100 py-2 d-flex align-items-center justify-content-center gap-2" style="cursor: pointer;">
+                                    <i class="bi bi-upload"></i> Select Image from Device
+                                </label>
+                                <div class="text-secondary small" style="font-size: 0.75rem; line-height: 1.3;">
+                                    <i class="bi bi-info-circle me-1"></i> Supports PNG, JPG, JPEG, SVG, GIF up to 2MB. Custom uploaded image will override the preset grid.
+                                </div>
+                            </div>
+                            <h6 class="form-label-custom mb-2 small text-uppercase tracking-wider">Or Choose a Preset Avatar:</h6>
+                            <div class="avatar-grid d-flex flex-wrap gap-2 justify-content-start" style="display: flex !important; grid-template-columns: none !important;">
+                                <img src="{{ url_for('static', filename='images/logo.png') }}" 
+                                     class="avatar-option {% if current_user.profile_pic == 'logo.png' %}selected{% endif %}" 
+                                     data-avatar="logo.png" 
+                                     alt="Logo Option" 
+                                     style="width: 48px; height: 48px; border-radius: 50%; padding: 4px; border: 2px solid transparent; cursor: pointer; object-fit: contain; background: rgba(255, 255, 255, 0.1);">
+                                {% for i in range(1, 7) %}
+                                    {% set file = 'avatar-' ~ i ~ '.svg' %}
+                                    <img src="{{ url_for('static', filename='images/' + file) }}" 
+                                         class="avatar-option {% if current_user.profile_pic == file %}selected{% endif %}" 
+                                         data-avatar="{{ file }}" 
+                                         alt="Avatar option {{ i }}"
+                                         style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; object-fit: cover;">
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 2: Personal & Bank Details -->
+                <div class="glass-card shadow-sm mb-4">
+                    <div class="d-flex align-items-center gap-3 mb-3 border-bottom pb-2">
+                        <i class="bi bi-person-badge fs-4 text-indigo" style="color: var(--brand-primary);"></i>
+                        <h5 class="mb-0 brand-font">Personal & Bank Details</h5>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6 form-group-custom">
+                            <label class="form-label-custom" for="username-profile">Username</label>
+                            <input type="text" name="username" id="username-profile" class="form-control-custom" value="{{ current_user.username }}" required>
+                        </div>
+                        <div class="col-md-6 form-group-custom">
+                            <label class="form-label-custom" for="email-profile">Email Address</label>
+                            <input type="email" name="email" id="email-profile" class="form-control-custom" value="{{ current_user.email }}" required>
+                        </div>
+                        <div class="col-md-6 form-group-custom">
+                            <label class="form-label-custom" for="currency-profile">Preferred Currency</label>
+                            <select name="currency" id="currency-profile" class="form-control-custom select-custom" style="padding-top: 13px; padding-bottom: 13px; height: auto;">
+                                <option value="USD" {% if current_user.currency == 'USD' %}selected{% endif %}>USD ($)</option>
+                                <option value="EUR" {% if current_user.currency == 'EUR' %}selected{% endif %}>EUR (€)</option>
+                                <option value="GBP" {% if current_user.currency == 'GBP' %}selected{% endif %}>GBP (£)</option>
+                                <option value="INR" {% if current_user.currency == 'INR' %}selected{% endif %}>INR (₹)</option>
+                                <option value="JPY" {% if current_user.currency == 'JPY' %}selected{% endif %}>JPY (¥)</option>
+                                <option value="AUD" {% if current_user.currency == 'AUD' %}selected{% endif %}>AUD (A$)</option>
+                                <option value="CAD" {% if current_user.currency == 'CAD' %}selected{% endif %}>CAD (C$)</option>
+                                <option value="CNY" {% if current_user.currency == 'CNY' %}selected{% endif %}>CNY (¥)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group-custom">
+                            <label class="form-label-custom" for="bank_name-profile">Associated Bank Name</label>
+                            <input type="text" name="bank_name" id="bank_name-profile" class="form-control-custom" value="{{ current_user.bank_name or 'Primary Bank' }}" placeholder="e.g. Chase Bank, Bank of America" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 3: Change Password -->
+                <div class="glass-card shadow-sm mb-4">
+                    <div class="d-flex align-items-center gap-3 mb-3 border-bottom pb-2">
+                        <i class="bi bi-key fs-4 text-indigo" style="color: var(--brand-primary);"></i>
+                        <h5 class="mb-0 brand-font">Change Password</h5>
+                    </div>
+                    <p class="text-secondary small mb-3">Leave blank if you do not wish to update your current password.</p>
+                    
+                    <div class="form-group-custom">
+                        <label class="form-label-custom" for="password-profile">New Password</label>
+                        <div class="password-toggle-wrapper">
+                            <input type="password" name="password" id="password-profile" class="form-control-custom password-input" placeholder="••••••••">
+                            <button type="button" class="password-toggle-btn" aria-label="Toggle Password Visibility">
+                                <i class="bi bi-eye-slash-fill"></i>
+                            </button>
+                        </div>
+                        <!-- Password Strength Meter Container -->
+                        <div class="password-strength-container mt-2">
+                            <div class="progress-custom" style="height: 6px;">
+                                <div id="strength-bar" class="progress-bar-custom bg-danger" style="width: 0%; transition: all 0.3s ease;"></div>
+                            </div>
+                            <span id="strength-text" class="text-muted small mt-1 d-block" style="font-size: 0.75rem;">Password Strength: Weak</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-premium w-100 py-3">
+                    <i class="bi bi-check2-circle me-2"></i> Save Profile Settings
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Small and below of the page: Danger Zone and Account Deletion -->
+    <div class="row mt-5 pt-4 animate-entrance delay-3 justify-content-center">
+        <div class="col-lg-8">
+            <div class="border-top border-danger border-opacity-25 pt-4">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div>
+                        <h6 class="text-danger mb-1 brand-font small d-flex align-items-center gap-2">
+                            <i class="bi bi-exclamation-triangle-fill"></i> Danger Zone
+                        </h6>
+                        <p class="text-secondary mb-0" style="font-size: 0.75rem;">Deleting your account is permanent. All logged expenses, category budgets, and personal reports will be permanently expunged.</p>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-outline-danger btn-sm px-3" data-bs-toggle="collapse" data-bs-target="#deleteAccountCollapse" aria-expanded="false" aria-controls="deleteAccountCollapse">
+                            <i class="bi bi-trash"></i> Delete Account...
+                        </button>
+                    </div>
+                </div>
+
+                <div class="collapse mt-3" id="deleteAccountCollapse">
+                    <div class="p-3 border rounded border-danger bg-danger-subtle bg-opacity-10 mx-auto" style="max-width: 500px; background-color: rgba(239, 68, 68, 0.05);">
+                        <form method="POST" action="{{ url_for('auth.delete_account') }}" novalidate>
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="form-group-custom mb-3">
+                                <label class="form-label-custom text-danger small" for="delete-password-confirm" style="color: var(--brand-danger);">Confirm Password</label>
+                                <div class="password-toggle-wrapper">
+                                    <input type="password" name="password" id="delete-password-confirm" class="form-control-custom password-input border-danger" placeholder="••••••••" required>
+                                    <button type="button" class="password-toggle-btn" aria-label="Toggle Password Visibility">
+                                        <i class="bi bi-eye-slash-fill"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-danger btn-sm w-100 py-2 fw-semibold">
+                                <i class="bi bi-shield-alert me-2"></i> Permanently Delete Account
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

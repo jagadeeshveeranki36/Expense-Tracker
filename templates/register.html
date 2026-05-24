@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 75vh;">
+    <div class="glass-card shadow-lg animate-entrance delay-2 w-100" style="max-width: 460px;">
+        <div class="text-center mb-4">
+            <i class="bi bi-person-plus fs-1" style="color: var(--brand-primary);"></i>
+            <h2 class="h3 mt-2 brand-font">Create Account</h2>
+            <p class="text-muted">Join Expense Tracker to simplify your financial life</p>
+        </div>
+        
+        <form method="POST" action="{{ url_for('auth.register') }}{% if request.args.get('add_account') %}?add_account=1{% endif %}" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <div class="form-group-custom">
+                {{ form.username.label(class="form-label-custom") }}
+                {{ form.username(class="form-control-custom" + (" is-invalid" if form.username.errors else ""), placeholder="johndoe") }}
+                {% for error in form.username.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <div class="form-group-custom">
+                {{ form.email.label(class="form-label-custom") }}
+                {{ form.email(class="form-control-custom" + (" is-invalid" if form.email.errors else ""), placeholder="name@example.com") }}
+                {% for error in form.email.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <div class="form-group-custom">
+                {{ form.password.label(class="form-label-custom") }}
+                <div class="password-toggle-wrapper">
+                    {{ form.password(class="form-control-custom password-input" + (" is-invalid" if form.password.errors else ""), placeholder="••••••••", id="register-password") }}
+                    <button type="button" class="password-toggle-btn" aria-label="Toggle Password Visibility">
+                        <i class="bi bi-eye-slash-fill"></i>
+                    </button>
+                </div>
+                <!-- Password Strength Meter Container -->
+                <div class="password-strength-container mt-2">
+                    <div class="progress-custom" style="height: 6px;">
+                        <div id="strength-bar" class="progress-bar-custom bg-danger" style="width: 0%; transition: all 0.3s ease;"></div>
+                    </div>
+                    <span id="strength-text" class="text-muted small mt-1 d-block" style="font-size: 0.75rem;">Password Strength: Weak</span>
+                </div>
+                {% for error in form.password.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <div class="form-group-custom">
+                {{ form.confirm_password.label(class="form-label-custom") }}
+                <div class="password-toggle-wrapper">
+                    {{ form.confirm_password(class="form-control-custom password-input" + (" is-invalid" if form.confirm_password.errors else ""), placeholder="••••••••") }}
+                    <button type="button" class="password-toggle-btn" aria-label="Toggle Password Visibility">
+                        <i class="bi bi-eye-slash-fill"></i>
+                    </button>
+                </div>
+                {% for error in form.confirm_password.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="form-group-custom mb-4">
+                <label class="form-label-custom" for="security_answer">{{ session.get('security_challenge_q', 'Security Verification') }}</label>
+                <input type="text" name="security_answer" id="security_answer" class="form-control-custom" placeholder="Solve the math challenge" required autocomplete="off">
+            </div>
+            
+            {{ form.submit(class="btn-premium w-100 py-3 mb-3") }}
+            
+            <div class="text-center mt-2">
+                <span class="text-secondary small">Already registered? </span>
+                <a href="{{ url_for('auth.login') }}{% if request.args.get('add_account') %}?add_account=1{% endif %}" class="small text-decoration-none" style="color: var(--brand-primary); font-weight: 600;">Sign in here</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
