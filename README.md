@@ -35,85 +35,116 @@ This suite is built to be lightweight, secure, and fast:
 
 ---
 
-## ⚙️ Compilation, Setup & Running Steps
+## 🚀 Complete Installation & Run Guide (All OS)
 
-Follow these steps to compile, initialize, and execute the Expense Tracker application on your local machine:
+Follow these step-by-step commands to clone, compile, and run the Expense Tracker application on any operating system:
 
 ### 1. Prerequisites
-Make sure you have **Python 3.8 or higher** installed.
+Make sure you have **Python 3.8 or higher** and **Git** installed on your system.
 
-### 2. Prepare the Workspace Environment
-Navigate to the root project directory in your terminal and compile a clean Python virtual environment:
+---
 
-**On Windows (PowerShell):**
+### Step 2: Clone the Repository
+Open your terminal (PowerShell, Command Prompt, or terminal emulator) and run:
+```bash
+git clone https://github.com/jagadeeshveeranki36/Expense-Tracker.git
+cd Expense-Tracker
+```
+
+---
+
+### Step 3: Initialize & Activate Virtual Environment
+
+**💻 On Windows (PowerShell):**
 ```powershell
-# Create the environment directory
 python -m venv venv
-
-# Activate the virtual environment
 .\venv\Scripts\Activate.ps1
 ```
 
-**On Linux / macOS:**
-```bash
-# Create the environment directory
+**💻 On Windows (Command Prompt - CMD):**
+```cmd
 python -m venv venv
+call venv\Scripts\activate.bat
+```
 
-# Activate the virtual environment
+**🍎 / 🐧 On macOS / Linux:**
+```bash
+python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 3. Compile and Install Package Dependencies
-Install the required packages list to compile all libraries needed for reports, database, security, and charts:
+---
+
+### Step 4: Install Dependencies
+With the virtual environment active, compile and install all required packages:
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Configure Environment Variables
-Copy the `.env.example` file to create your active `.env` configuration file:
+---
 
-**On Windows (PowerShell):**
+### Step 5: Configure Environment Variables
+Copy the `.env.example` file to create your local active `.env` configuration file:
+
+**💻 On Windows (PowerShell / CMD):**
 ```powershell
 copy .env.example .env
 ```
 
-**On Linux / macOS:**
+**🍎 / 🐧 On macOS / Linux:**
 ```bash
 cp .env.example .env
 ```
-*(Open up `.env` to configure your `SECRET_KEY` and other parameters).*
+*(Optional: Open `.env` in any editor to customize your `SECRET_KEY` and configuration variables).*
 
-### 5. Start and Bootstrap the Application
-Run the main startup script. The application uses a self-healing SQLite configuration; on the first run, it will automatically bootstrap the database and compile all tables:
+---
+
+### Step 6: Launch the Application
+Start the Flask development server. On your very first run, the self-healing database layer will automatically compile the SQLite database structures and tables:
+
+**💻 On Windows (PowerShell / CMD):**
 ```bash
 python app.py
 ```
+
+**🍎 / 🐧 On macOS / Linux:**
+```bash
+python3 app.py
+```
 Open your browser and navigate to: **[http://127.0.0.1:5000/](http://127.0.0.1:5000/)** 🎉
 
-### 6. Run Automated Testing Suite
-Validate the entire application codebase integrity, blueprints, database relationships, and account switcher structures with these commands:
-```powershell
-# Run core dashboard integration test suite
-python tests/verify_app.py
+---
 
-# Run multi-account switcher session tests
+### Step 7: Run Automated Testing Suites
+To verify database relationships, secure forms, and switcher endpoints are working correctly:
+
+**💻 On Windows (PowerShell / CMD):**
+```bash
+python tests/verify_app.py
 python tests/verify_multi_account.py
 ```
+
+**🍎 / 🐧 On macOS / Linux:**
+```bash
+python3 tests/verify_app.py
+python3 tests/verify_multi_account.py
+```
+*(Verify that both test commands return an `OK` result)*
 
 ---
 
 ## 🐳 Running with Docker
 
-You can also package, compile, and run the entire suite containerized:
+You can also run the entire suite using Docker and Docker Compose:
 
 ```bash
-# Build and start container services in the background
+# Build and start services in the background
 docker-compose up --build -d
 
 # Check service status
 docker-compose ps
 
-# Stop container services
+# Tear down the services
 docker-compose down
 ```
-The containerized application will be live at `http://localhost:5000/`.
+Once launched, the containerized application will be live at `http://localhost:5000/`.
