@@ -4,7 +4,9 @@
   <img src="static/images/logo.png" alt="Expense Tracker Logo" width="120px" style="border-radius: 20px; box-shadow: 0 8px 24px rgba(79, 70, 229, 0.15);"/>
 </p>
 
-**Expense Tracker** is a premium, beautifully designed personal finance space built to help users manage their daily spending with zero friction. Inspired by sleek, modern fintech applications, this project is built to deliver a highly interactive, responsive, and luxurious financial management experience.
+### 🌐 Live Demo Website: [https://jagadeeshveeranki36.github.io/Expense-Tracker/](https://jagadeeshveeranki36.github.io/Expense-Tracker/)
+
+**Expense Tracker** is a premium, beautifully designed personal finance space built to help users manage their daily spending with zero friction. Inspired by sleek, modern fintech applications, this project delivers a highly interactive, responsive, and luxurious financial management experience directly in your browser.
 
 ---
 
