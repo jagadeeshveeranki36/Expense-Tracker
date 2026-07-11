@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker — Premium Personal Finance & Wealth Management</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="static/images/logo.png">
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Manage your personal finances with a premium, state-of-the-art Expense Tracker featuring dynamic budgets, advanced Chart.js analytics, and full Excel/PDF reports exports.">
+    <meta name="author" content="Jagadeesh Veeranki">
+    
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    
+    <!-- Local Stylesheet Overrides -->
+    <link href="static/css/style.css" rel="stylesheet">
+    <link href="static/css/animations.css" rel="stylesheet">
+    
+    <style>
+        /* Extra styling adjustments for client-side sections transition */
+        .app-section {
+            width: 100%;
+            transition: opacity 0.3s ease;
+        }
+        .user-logged-in .sidebar,
+        .user-logged-in .topbar,
+        .user-logged-in .bottom-nav {
+            display: flex !important;
+        }
+        .user-visitor .sidebar,
+        .user-visitor .topbar,
+        .user-visitor .bottom-nav {
+            display: none !important;
+        }
+        .user-visitor .main-content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .password-toggle-wrapper {
+            position: relative;
+        }
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="user-visitor">
+
+    <!-- Dynamic Toast Notification Alerts -->
+    <div class="toast-container-custom"></div>
+
+    <div class="app-container">
+        <!-- 1. Collapsible Desktop Sidebar (Only visible to authenticated users) -->
+        <nav class="sidebar d-none" id="sidebar-navigation">
+            <a href="#/dashboard" class="sidebar-brand">
+                <img src="static/images/logo.png" alt="Logo" class="sidebar-logo me-2" style="height: 36px; width: 36px; object-fit: contain; border-radius: 8px;">
+                <span class="brand-font fs-4">Expense Tracker</span>
+                <button type="button" class="btn-close d-lg-none ms-auto p-1 fs-6" id="sidebar-mobile-close" aria-label="Close Sidebar Menu" style="box-shadow: none; filter: var(--close-btn-filter, none);"></button>
+            </a>
+            
+            <ul class="sidebar-menu">
+                <li class="menu-item active">
+                    <a href="#/dashboard">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#/expenses">
+                        <i class="bi bi-cash-stack"></i> Expenses
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#/reports">
+                        <i class="bi bi-pie-chart"></i> Reports &amp; Analytics
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#/profile">
+                        <i class="bi bi-person-gear"></i> Profile Settings
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <button class="logout-btn border-0 bg-transparent w-100 text-start" onclick="logoutCurrentUser()">
+                    <i class="bi bi-box-arrow-left"></i> Logout
+                </button>
+            </div>
+        </nav>
+
+        <!-- 2. Main content space -->
+        <main class="main-content">
+            <!-- Topbar Header actions -->
+            <div class="topbar d-none animate-entrance delay-1">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-link text-primary d-lg-none p-0 border-0 fs-3" id="sidebar-mobile-toggle" style="box-shadow: none;" aria-label="Open Sidebar Menu">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <img src="static/images/logo.png" alt="Logo" class="topbar-logo d-lg-none" style="height: 36px; width: 36px; object-fit: contain; border-radius: 8px;">
+                    <div>
+                        <h1 class="h3 mb-0 brand-font">Hello, Tracker</h1>
+                        <p class="mb-0 text-muted">Keep tracking your expenses effortlessly.</p>
+                    </div>
+                </div>
+                
+                <div class="topbar-actions">
+                    <!-- Light/Dark Mode toggle button -->
+                    <button class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Toggle Theme">
+                        <i class="bi bi-moon-fill"></i>
+                    </button>
+                    
+                    <!-- Premium Google-Style Multi-Account Switcher Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-link d-flex align-items-center gap-2 text-decoration-none border-0 p-0 dropdown-toggle text-primary" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow: none;"></button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border border-light-subtle rounded-3 p-3" aria-labelledby="userDropdown" style="width: 320px; max-width: 90vw;"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 SPA APP SCREEN SECTIONS
+                 ========================================== -->
+
+            <!-- SECTION A: LANDING PAGE -->
+            <section id="landing-section" class="app-section container py-5">
+                <div class="row align-items-center g-5 py-5">
+                    <!-- Hero Left Text -->
+                    <div class="col-lg-6 animate-entrance delay-2">
+                        <span class="badge bg-indigo-subtle text-indigo border border-indigo-subtle px-3 py-2 rounded-pill mb-3" style="color: var(--brand-primary); background-color: rgba(79, 70, 229, 0.1);">
+                            ✨ Premium Wealth Management
+                        </span>
+                        <h1 class="display-4 fw-bold lh-sm mb-4 brand-font" style="background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                            Floating Above Your Overspending
+                        </h1>
+                        <p class="lead mb-4 text-secondary">
+                            Meet **Expense Tracker** — the intelligent personal finance suite that visualizes, limits, and reports your monthly expenditures. Get beautiful, persistent dark mode support, category-level budgets, and lightning-fast Excel and PDF report exports.
+                        </p>
+                        <div class="d-grid gap-3 d-sm-flex justify-content-sm-start">
+                            <a href="#/register" class="btn-premium py-3 px-4 fs-6 text-decoration-none text-center">
+                                <i class="bi bi-rocket-takeoff me-2"></i> Get Started Free
+                            </a>
+                            <a href="#/login" class="btn-premium-outline py-3 px-4 fs-6 text-decoration-none text-center">
+                                Sign In Account
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Hero Right Mockup Graphics -->
+                    <div class="col-lg-6 animate-entrance delay-3 d-flex justify-content-center position-relative" style="z-index: 2;">
+                        <div class="position-absolute" style="width: 400px; height: 400px; background: radial-gradient(circle, rgba(79, 70, 229, 0.12) 0%, rgba(0,0,0,0) 70%); z-index: -1;"></div>
+                        
+                        <div class="d-flex flex-column gap-3 w-100" style="max-width: 440px;">
+                            <!-- Widget Card 1: Total Expenses -->
+                            <div class="glass-card card-float shadow-lg" style="animation-delay: 0.1s;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="text-muted d-block small">All-Time Wealth Logged</span>
+                                        <span class="h3 mb-0 brand-font" style="color: var(--brand-primary); font-weight: 700;">₹24,530.12</span>
+                                    </div>
+                                    <div class="bg-indigo-subtle rounded-circle p-3 d-flex align-items-center justify-content-center" style="background-color: rgba(79, 70, 229, 0.1); width: 48px; height: 48px;">
+                                        <i class="bi bi-wallet2 text-indigo" style="color: var(--brand-primary);"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Widget Card 2: Interactive progress gauge -->
+                            <div class="glass-card card-float shadow-lg" style="animation-delay: 0.8s;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="font-weight-bold d-block small"><i class="bi bi-lightning-charge me-1"></i> Food Category Budget</span>
+                                    <span class="badge bg-success-subtle text-success" style="background-color: rgba(16, 185, 129, 0.1); color: var(--brand-success);">75% Limit</span>
+                                </div>
+                                <div class="progress-custom mb-1">
+                                    <div class="progress-bar-custom bg-success" style="width: 75%; background-color: var(--brand-success);"></div>
+                                </div>
+                                <span class="text-muted d-block small" style="font-size: 0.75rem;">₹450.00 spent of ₹600.00 monthly cap</span>
+                            </div>
+                            
+                            <!-- Widget Card 3: Floating Micro Transaction -->
+                            <div class="glass-card card-float shadow-lg" style="animation-delay: 1.5s;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="fs-2">✈️</span>
+                                    <div class="flex-grow-1">
+                                        <span class="d-block font-weight-bold" style="font-weight: 600;">Travel Expense</span>
+                                        <span class="text-muted d-block small" style="font-size: 0.8rem;">Flight ticket booking</span>
+                                    </div>
+                                    <span class="text-danger fw-bold" style="color: var(--brand-danger); font-weight: 700;">-₹340.50</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION B: SIGN IN -->
+            <section id="login-section" class="app-section container d-flex align-items-center justify-content-center d-none" style="min-height: 85vh;">
+                <div class="glass-card shadow-lg animate-entrance delay-2 w-100" style="max-width: 450px;">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-shield-lock fs-1" style="color: var(--brand-primary);"></i>
+                        <h2 class="h3 mt-2 brand-font">Sign In</h2>
+                        <p class="text-muted">Enter your credentials to access your dashboard</p>
+                    </div>
+                    
+                    <form novalidate>
+                        <div class="form-group-custom">
+                            <label class="form-label-custom" for="login-email">Email Address</label>
+                            <input type="email" name="email" id="login-email" class="form-control-custom" placeholder="name@example.com" required>
+                        </div>
+                        
+                        <div class="form-group-custom">
+                            <label class="form-label-custom" for="login-password">Password</label>
+                            <div class="password-toggle-wrapper">
+                                <input type="password" name="password" id="login-password" class="form-control-custom password-input" placeholder="••••••••" required>
+                                <button type="button" class="password-toggle-btn" aria-label="Toggle Password Visibility">
+                                    <i class="bi bi-eye-slash-fill"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group-custom mb-4">
+                            <label class="form-label-custom captcha-label" for="login-security">Security Verification</label>
+                            <div class="input-group">
+                                <input type="text" name="security_answer" id="login-security" class="form-control-custom" placeholder="Solve the math challenge" required autocomplete="off">
+                                <button type="button" class="btn btn-outline-secondary captcha-refresh-btn" aria-label="Refresh Security Question"><i class="bi bi-arrow-clockwise"></i></button>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn-premium w-100 py-3 mb-3">Sign In</button>
+                        
+                        <div class="text-center mt-3">
+                            <span class="text-secondary small">Don't have an account? </span>
+                            <a href="#/register" class="small text-decoration-none" style="color: var(--brand-primary); font-weight: 600;">Create account</a>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- SECTION C: SIGN UP -->
+            <section id="register-section" class="app-section container d-flex align-items-center justify-content-center d-none" style="min-height: 85vh;">
+                <div class="glass-card shadow-lg animate-entrance delay-2 w-100" style="max-width: 460px;">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-person-plus fs-1" style="color: var(--brand-primary);"></i>
+                        <h2 class="h3 mt-2 brand-font">Create Account</h2>
+                        <p class="text-muted">Join Expense Tracker to simplify your financial life</p>
+                    </div>
+                    
+                    <form novalidate>
+                        <div class="form-group-custom">
+                            <label class="form-label-custom" for="register-username">Username</label>
+                            <input type="text" name="username" id="register-username" class="form-control-custom" placeholder="johndoe" required>
+                        </div>
+                        
+                        <div class="form-group-custom">
+                            <label class="form-label-custom" for="register-email">Email Address</label>
+                            <input type="email" name="email" id="register-email" class="form-control-custom" placeholder="name@example.com" required>
+                        </div>
+                        
+                        <div class="form-group-custom">
+                            <label class="form-label-custom" for="register-password">Password</label>
+                            <div class="password-toggle-wrapper">
+                                <input type="password" name="password" id="register-password" class="form-control-custom password-input" placeholder="••••••••" required>
+                                <button type="button" class="password-toggle-btn" aria-label="Toggle Password Visibility">
+                                    <i class="bi bi-eye-slash-fill"></i>
+                                </button>
+                            </div>
+                            <!-- Password Strength Meter Container -->
+                            <div class="password-strength-container mt-2">
+                                <div class="progress-custom" style="height: 6px;">
+                                    <div class="progress-bar-custom bg-danger" style="width: 0%; transition: all 0.3s ease;"></div>
+                                </div>
+                                <span class="text-muted small mt-1 d-block" style="font-size: 0.75rem;">Password Strength: Weak</span>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group-custom">
+                            <label class="form-label-custom" for="register-confirm-password">Confirm Password</label>
+                            <div class="password-toggle-wrapper">
+                                <input type="password" name="confirm_password" id="register-confirm-password" class="form-control-custom password-input" placeholder="••••••••" required>
+                                <button type="button" class="password-toggle-btn" aria-label="Toggle Password Visibility">
+                                    <i class="bi bi-eye-slash-fill"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group-custom mb-4">
+                            <label class="form-label-custom captcha-label" for="register-security">Security Verification</label>
+                            <div class="input-group">
+                                <input type="text" name="security_answer" id="register-security" class="form-control-custom" placeholder="Solve the math challenge" required autocomplete="off">
+                                <button type="button" class="btn btn-outline-secondary captcha-refresh-btn" aria-label="Refresh Security Question"><i class="bi bi-arrow-clockwise"></i></button>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn-premium w-100 py-3 mb-3">Create Account</button>
+                        
+                        <div class="text-center mt-2">
+                            <span class="text-secondary small">Already registered? </span>
+                            <a href="#/login" class="small text-decoration-none" style="color: var(--brand-primary); font-weight: 600;">Sign in here</a>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- SECTION D: USER DASHBOARD -->
+            <section id="dashboard-section" class="app-section container-fluid px-0 d-none">
+                <!-- Overspending Alerts Banner -->
+                <div class="row mb-4 animate-entrance delay-2 d-none" id="budget-alerts-banner-container"></div>
+
+                <!-- Statistics Stat Cards Grid -->
+                <div class="row g-4 mb-4">
+                    <!-- Total Expenses -->
+                    <div class="col-12 col-sm-6 col-xl-3 animate-entrance delay-1">
+                        <div class="glass-card card-float shadow-sm h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="text-secondary font-weight-bold">Total Expenses</span>
+                                <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="background-color: rgba(79, 70, 229, 0.1); width: 40px; height: 40px;">
+                                    <i class="bi bi-wallet2 text-indigo" style="color: var(--brand-primary);"></i>
+                                </div>
+                            </div>
+                            <h3 class="brand-font mb-1 text-primary animate-counter" id="dash-alltime-expenses" data-target="0.00" data-prefix="₹">₹0.00</h3>
+                            <span class="text-muted small">All-time tracked log</span>
+                        </div>
+                    </div>
+
+                    <!-- Current Month Spending -->
+                    <div class="col-12 col-sm-6 col-xl-3 animate-entrance delay-2">
+                        <div class="glass-card card-float shadow-sm h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="text-secondary font-weight-bold">This Month's Spending</span>
+                                <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="background-color: rgba(6, 182, 212, 0.1); width: 40px; height: 40px;">
+                                    <i class="bi bi-calendar-event text-cyan" style="color: var(--brand-secondary);"></i>
+                                </div>
+                            </div>
+                            <h3 class="brand-font mb-1 text-primary animate-counter" id="dash-monthly-expenses" data-target="0.00" data-prefix="₹">₹0.00</h3>
+                            <span class="text-muted small">Current month log</span>
+                        </div>
+                    </div>
+
+                    <!-- Daily Average -->
+                    <div class="col-12 col-sm-6 col-xl-3 animate-entrance delay-3">
+                        <div class="glass-card card-float shadow-sm h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="text-secondary font-weight-bold">Daily Average</span>
+                                <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="background-color: rgba(16, 185, 129, 0.1); width: 40px; height: 40px;">
+                                    <i class="bi bi-calculator text-emerald" style="color: var(--brand-success);"></i>
+                                </div>
+                            </div>
+                            <h3 class="brand-font mb-1 text-primary animate-counter" id="dash-daily-average" data-target="0.00" data-prefix="₹">₹0.00</h3>
+                            <span class="text-muted small">Monthly daily average</span>
+                        </div>
+                    </div>
+
+                    <!-- Top Expenditure -->
+                    <div class="col-12 col-sm-6 col-xl-3 animate-entrance delay-4">
+                        <div class="glass-card card-float shadow-sm h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="text-secondary font-weight-bold">Top Expenditure</span>
+                                <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="background-color: rgba(239, 68, 68, 0.1); width: 40px; height: 40px;">
+                                    <i class="bi bi-graph-up-arrow text-danger" style="color: var(--brand-danger);"></i>
+                                </div>
+                            </div>
+                            <h3 class="brand-font mb-1 text-primary text-truncate fs-4" id="dash-highest-category" style="font-weight: 700;">Loading...</h3>
+                            <span class="text-muted small" id="dash-highest-category-sub">Loading totals...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard breakdown columns -->
+                <div class="row g-4">
+                    <!-- Left: Budget Limit Gauge List -->
+                    <div class="col-lg-6 animate-entrance delay-3">
+                        <div class="glass-card shadow-sm h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="mb-0 brand-font"><i class="bi bi-sliders me-2"></i> Budget Limits Status</h5>
+                                <a href="#/reports" class="small text-decoration-none" style="color: var(--brand-primary); font-weight: 600;">Configure limits</a>
+                            </div>
+                            <div class="d-flex flex-column gap-3" id="dashboard-budgets-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Recent Transactions Table -->
+                    <div class="col-lg-6 animate-entrance delay-4">
+                        <div class="glass-card shadow-sm h-100 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="mb-0 brand-font"><i class="bi bi-receipt-cutoff me-2"></i> Recent Transactions</h5>
+                                <a href="#/expenses" class="small text-decoration-none" style="color: var(--brand-primary); font-weight: 600;">View Ledger History</a>
+                            </div>
+
+                            <div class="table-responsive-custom flex-grow-1">
+                                <table class="table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th>Category</th>
+                                            <th>Description</th>
+                                            <th>Date</th>
+                                            <th class="text-end">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dashboard-recent-transactions-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION E: EXPENSES LOG -->
+            <section id="expenses-section" class="app-section container-fluid px-0 d-none">
+                <div class="row g-4">
+                    <!-- Left Filtering Sidebar Column -->
+                    <div class="col-lg-3 animate-entrance delay-2">
+                        <div class="glass-card shadow-sm mb-4">
+                            <h5 class="brand-font mb-3"><i class="bi bi-filter-square me-2"></i> Refine Filter</h5>
+                            
+                            <form>
+                                <div class="form-group-custom">
+                                    <label class="form-label-custom" for="client-live-search">Search Description</label>
+                                    <input type="text" id="client-live-search" class="form-control-custom" placeholder="Live matches...">
+                                </div>
+                                
+                                <div class="form-group-custom">
+                                    <label class="form-label-custom" for="category-filter">Category</label>
+                                    <select id="category-filter" class="form-control-custom">
+                                        <option value="">All Categories</option>
+                                        <option value="Food">🍔 Food</option>
+                                        <option value="Travel">✈️ Travel</option>
+                                        <option value="Shopping">🛍️ Shopping</option>
+                                        <option value="Bills">💡 Bills</option>
+                                        <option value="Entertainment">🎬 Entertainment</option>
+                                        <option value="Healthcare">🏥 Healthcare</option>
+                                        <option value="Education">📚 Education</option>
+                                        <option value="Others">📦 Others</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group-custom">
+                                    <label class="form-label-custom" for="date-from-filter">Date From</label>
+                                    <input type="date" id="date-from-filter" class="form-control-custom">
+                                </div>
+                                
+                                <div class="form-group-custom">
+                                    <label class="form-label-custom" for="date-to-filter">Date To</label>
+                                    <input type="date" id="date-to-filter" class="form-control-custom">
+                                </div>
+                                
+                                <div class="form-group-custom">
+                                    <label class="form-label-custom" for="sort-filter">Sort By</label>
+                                    <select id="sort-filter" class="form-control-custom">
+                                        <option value="latest">Latest Date</option>
+                                        <option value="oldest">Oldest Date</option>
+                                        <option value="highest">Highest Amount</option>
+                                        <option value="lowest">Lowest Amount</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="d-flex flex-column gap-2 mt-4">
+                                    <button type="submit" class="btn-premium w-100"><i class="bi bi-search me-1"></i> Apply filters</button>
+                                    <button type="button" class="btn-premium-outline w-100 text-center"><i class="bi bi-x-circle me-1"></i> Clear all</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- CSV Import widget -->
+                        <div class="glass-card shadow-sm">
+                            <h5 class="brand-font mb-3"><i class="bi bi-cloud-upload me-2"></i> CSV Import</h5>
+                            <form>
+                                <div class="form-group-custom">
+                                    <input type="file" class="form-control-custom" accept=".csv" required aria-label="Upload CSV file">
+                                </div>
+                                <button type="submit" class="btn-premium-outline btn-sm w-100 mt-2">
+                                    <i class="bi bi-box-arrow-in-down me-1"></i> Upload data log
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Expenses List Column -->
+                    <div class="col-lg-9 animate-entrance delay-3">
+                        <div class="glass-card shadow-sm h-100 d-flex flex-column">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+                                <h5 class="mb-0 brand-font"><i class="bi bi-journal-text me-2"></i> Ledger Log History</h5>
+                                
+                                <!-- Action Exports -->
+                                <div class="d-flex gap-2">
+                                    <button onclick="exportToCSV()" class="btn-premium-outline btn-sm d-flex align-items-center gap-1 border border-2 border-primary bg-transparent">
+                                        <i class="bi bi-filetype-csv"></i> CSV
+                                    </button>
+                                    <button onclick="exportToExcel()" class="btn-premium-outline btn-sm d-flex align-items-center gap-1 border border-2 border-primary bg-transparent">
+                                        <i class="bi bi-file-earmark-excel"></i> Excel
+                                    </button>
+                                    <button onclick="exportToPDF()" class="btn-premium-outline btn-sm d-flex align-items-center gap-1 border border-2 border-primary bg-transparent">
+                                        <i class="bi bi-file-earmark-pdf"></i> PDF
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="table-responsive-custom flex-grow-1 mb-4">
+                                <table class="table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th>Category</th>
+                                            <th>Description</th>
+                                            <th>Date</th>
+                                            <th>Amount</th>
+                                            <th class="text-center" style="width: 100px;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="expenses-list-tbody"></tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Pagination controls -->
+                            <nav aria-label="Expenses navigation pagination" class="mt-auto" id="expenses-pagination-nav"></nav>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION F: ANALYTICS REPORTS -->
+            <section id="reports-section" class="app-section container-fluid px-0 d-none">
+                <!-- Stats Row -->
+                <div class="row g-4 mb-4">
+                    <!-- Monthly Total -->
+                    <div class="col-md-4 animate-entrance delay-1">
+                        <div class="glass-card shadow-sm">
+                            <span class="text-secondary font-weight-bold d-block small mb-2">Monthly Expenditure Log</span>
+                            <h3 class="brand-font mb-0 text-primary" id="stat-monthly-total" style="font-weight: 700;">₹0.00</h3>
+                        </div>
+                    </div>
+                    
+                    <!-- Daily Average -->
+                    <div class="col-md-4 animate-entrance delay-2">
+                        <div class="glass-card shadow-sm">
+                            <span class="text-secondary font-weight-bold d-block small mb-2">Monthly Daily Average</span>
+                            <h3 class="brand-font mb-0 text-primary" id="stat-daily-average" style="font-weight: 700;">₹0.00</h3>
+                        </div>
+                    </div>
+                    
+                    <!-- Highest Category -->
+                    <div class="col-md-4 animate-entrance delay-3">
+                        <div class="glass-card shadow-sm">
+                            <span class="text-secondary font-weight-bold d-block small mb-2">Highest Category Spent</span>
+                            <h3 class="brand-font mb-0 text-primary fs-5 text-truncate" id="stat-highest-category" style="font-weight: 700; height: 30px; line-height: 30px;">Loading...</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts layout -->
+                <div class="row g-4 mb-4">
+                    <!-- Pie Chart -->
+                    <div class="col-lg-5 animate-entrance delay-2">
+                        <div class="glass-card shadow-sm h-100">
+                            <h5 class="brand-font mb-4"><i class="bi bi-pie-chart me-2"></i> Category breakdown</h5>
+                            <div style="position: relative; height: 260px;">
+                                <canvas id="pieCategoryChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Line Chart -->
+                    <div class="col-lg-7 animate-entrance delay-3">
+                        <div class="glass-card shadow-sm h-100">
+                            <h5 class="brand-font mb-4"><i class="bi bi-graph-up me-2"></i> Spending trend this month</h5>
+                            <div style="position: relative; height: 260px;">
+                                <canvas id="lineDailyChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row g-4">
+                    <!-- Bar Chart -->
+                    <div class="col-lg-7 animate-entrance delay-3">
+                        <div class="glass-card shadow-sm h-100">
+                            <h5 class="brand-font mb-4"><i class="bi bi-bar-chart-steps me-2"></i> Monthly comparison</h5>
+                            <div style="position: relative; height: 260px;">
+                                <canvas id="barMonthlyChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Budget Settings form -->
+                    <div class="col-lg-5 animate-entrance delay-4">
+                        <div class="glass-card shadow-sm h-100">
+                            <h5 class="brand-font mb-3"><i class="bi bi-piggy-bank me-2"></i> Set Category Budgets</h5>
+                            <p class="text-secondary small mb-4">Setup monthly constraints per category. We will notify you on the dashboard when limits are crossed.</p>
+                            
+                            <form id="budget-api-form">
+                                <div class="form-group-custom">
+                                    <label class="form-label-custom" for="budget-category">Choose Category</label>
+                                    <select id="budget-category" class="form-control-custom" required>
+                                        <option value="Food">🍔 Food</option>
+                                        <option value="Travel">✈️ Travel</option>
+                                        <option value="Shopping">🛍️ Shopping</option>
+                                        <option value="Bills">💡 Bills</option>
+                                        <option value="Entertainment">🎬 Entertainment</option>
+                                        <option value="Healthcare">🏥 Healthcare</option>
+                                        <option value="Education">📚 Education</option>
+                                        <option value="Others">📦 Others</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group-custom">
+                                    <label class="form-label-custom" for="budget-limit">Monthly Limit</label>
+                                    <input type="number" step="0.01" min="0" id="budget-limit" class="form-control-custom" placeholder="e.g., 500.00" required>
+                                </div>
+                                
+                                <button type="submit" class="btn-premium w-100 mt-3">
+                                    <i class="bi bi-save me-1"></i> Save limit constraint
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION G: PROFILE SETTINGS -->
+            <section id="profile-section" class="app-section container py-4 d-none">
+                <!-- Page Header -->
+                <div class="mb-4 animate-entrance">
+                    <h2 class="brand-font h3">Settings</h2>
+                    <p class="text-secondary small">Manage your security credentials, customizable look, and data operations</p>
+                </div>
+
+                <!-- Stats summary card -->
+                <div class="row g-3 mb-4 animate-entrance delay-1">
+                    <div class="col-md-4">
+                        <div class="glass-card shadow-sm d-flex align-items-center gap-3 py-3 px-4 h-100">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-indigo-subtle" style="width: 48px; height: 48px; background-color: rgba(79, 70, 229, 0.1);">
+                                <i class="bi bi-receipt text-indigo fs-4" style="color: var(--brand-primary);"></i>
+                            </div>
+                            <div>
+                                <span class="text-secondary small d-block">Logged Transactions</span>
+                                <h4 class="mb-0 brand-font fw-bold text-indigo" id="prof-stat-logs" style="color: var(--brand-primary);">0</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="glass-card shadow-sm d-flex align-items-center gap-3 py-3 px-4 h-100">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-success-subtle" style="width: 48px; height: 48px; background-color: rgba(16, 185, 129, 0.1);">
+                                <i class="bi bi-cash-coin text-success fs-4" style="color: var(--brand-success);"></i>
+                            </div>
+                            <div>
+                                <span class="text-secondary small d-block">Monthly Spent</span>
+                                <h4 class="mb-0 brand-font fw-bold text-success" id="prof-stat-monthly" style="color: var(--brand-success);">₹0.00</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="glass-card shadow-sm d-flex align-items-center gap-3 py-3 px-4 h-100">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-warning-subtle" style="width: 48px; height: 48px; background-color: rgba(245, 158, 11, 0.1);">
+                                <i class="bi bi-sliders text-warning fs-4" style="color: var(--brand-warning);"></i>
+                            </div>
+                            <div>
+                                <span class="text-secondary small d-block">Active Budgets</span>
+                                <h4 class="mb-0 brand-font fw-bold text-warning" id="prof-stat-budgets" style="color: var(--brand-warning);">0</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Panel details -->
+                <div class="row g-4 animate-entrance delay-2">
+                    <div class="col-lg-8 mx-auto d-flex flex-column gap-4">
+                        <form novalidate>
+                            <input type="hidden" id="profile_pic_input">
+
+                            <!-- Appearance Customization card -->
+                            <div class="glass-card shadow-sm mb-4">
+                                <div class="d-flex align-items-center gap-3 mb-3 border-bottom pb-2">
+                                    <i class="bi bi-image fs-4 text-indigo" style="color: var(--brand-primary);"></i>
+                                    <h5 class="mb-0 brand-font">Appearance Customization</h5>
+                                </div>
+                                <div class="row g-4 align-items-center">
+                                    <!-- Circular preview with camera label trigger -->
+                                    <div class="col-md-4 text-center">
+                                        <div class="position-relative d-inline-block">
+                                            <img src="static/images/avatar-1.svg" id="selected-avatar-display" class="avatar-img-lg border border-3 mb-2 rounded-circle img-thumbnail" style="border-color: var(--brand-primary) !important; width: 140px; height: 140px; object-fit: cover;" alt="Selected avatar display">
+                                            <label for="avatar_file" class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2 d-flex align-items-center justify-content-center shadow" style="cursor: pointer; width: 38px; height: 38px; transform: translate(-10%, -10%); transition: all 0.2s ease;">
+                                                <i class="bi bi-camera-fill text-white fs-5"></i>
+                                            </label>
+                                            <input type="file" id="avatar_file" class="d-none" accept="image/*">
+                                        </div>
+                                        <span class="text-secondary small d-block mt-2">Live Avatar Preview</span>
+                                    </div>
+                                    <!-- Device selection preset options -->
+                                    <div class="col-md-8">
+                                        <div class="mb-3">
+                                            <label for="avatar_file" class="btn btn-outline-primary btn-sm mb-2 w-100 py-2 d-flex align-items-center justify-content-center gap-2" style="cursor: pointer;">
+                                                <i class="bi bi-upload"></i> Select Image from Device
+                                            </label>
+                                            <div class="text-secondary small" style="font-size: 0.75rem; line-height: 1.3;">
+                                                <i class="bi bi-info-circle me-1"></i> Supports PNG, JPG, JPEG, SVG, GIF up to 2MB. Custom uploaded image will override the preset grid.
+                                            </div>
+                                        </div>
+                                        <h6 class="form-label-custom mb-2 small text-uppercase tracking-wider">Or Choose a Preset Avatar:</h6>
+                                        <div class="avatar-grid d-flex flex-wrap gap-2 justify-content-start" style="display: flex !important;">
+                                            <img src="static/images/logo.png" class="avatar-option" data-avatar="logo.png" alt="Logo Preset" style="width: 48px; height: 48px; border-radius: 50%; padding: 4px; border: 2px solid transparent; cursor: pointer; object-fit: contain; background: rgba(255, 255, 255, 0.1);">
+                                            <img src="static/images/avatar-1.svg" class="avatar-option" data-avatar="avatar-1.svg" alt="Avatar 1" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;">
+                                            <img src="static/images/avatar-2.svg" class="avatar-option" data-avatar="avatar-2.svg" alt="Avatar 2" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;">
+                                            <img src="static/images/avatar-3.svg" class="avatar-option" data-avatar="avatar-3.svg" alt="Avatar 3" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;">
+                                            <img src="static/images/avatar-4.svg" class="avatar-option" data-avatar="avatar-4.svg" alt="Avatar 4" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;">
+                                            <img src="static/images/avatar-5.svg" class="avatar-option" data-avatar="avatar-5.svg" alt="Avatar 5" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;">
+                                            <img src="static/images/avatar-6.svg" class="avatar-option" data-avatar="avatar-6.svg" alt="Avatar 6" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Personal Details card -->
+                            <div class="glass-card shadow-sm mb-4">
+                                <div class="d-flex align-items-center gap-3 mb-3 border-bottom pb-2">
+                                    <i class="bi bi-person-badge fs-4 text-indigo" style="color: var(--brand-primary);"></i>
+                                    <h5 class="mb-0 brand-font">Personal & Bank Details</h5>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6 form-group-custom">
+                                        <label class="form-label-custom" for="username-profile">Username</label>
+                                        <input type="text" id="username-profile" class="form-control-custom" required>
+                                    </div>
+                                    <div class="col-md-6 form-group-custom">
+                                        <label class="form-label-custom" for="email-profile">Email Address</label>
+                                        <input type="email" id="email-profile" class="form-control-custom" required>
+                                    </div>
+                                    <div class="col-md-6 form-group-custom">
+                                        <label class="form-label-custom" for="currency-profile">Preferred Currency</label>
+                                        <select id="currency-profile" class="form-control-custom select-custom" style="padding-top: 13px; padding-bottom: 13px; height: auto;">
+                                            <option value="USD">USD ($)</option>
+                                            <option value="EUR">EUR (€)</option>
+                                            <option value="GBP">GBP (£)</option>
+                                            <option value="INR">INR (₹)</option>
+                                            <option value="JPY">JPY (¥)</option>
+                                            <option value="AUD">AUD (A$)</option>
+                                            <option value="CAD">CAD (C$)</option>
+                                            <option value="CNY">CNY (¥)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 form-group-custom">
+                                        <label class="form-label-custom" for="bank_name-profile">Associated Bank Name</label>
+                                        <input type="text" id="bank_name-profile" class="form-control-custom" placeholder="e.g. Chase Bank, HDFC Bank" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Password Update card -->
+                            <div class="glass-card shadow-sm mb-4">
+                                <div class="d-flex align-items-center gap-3 mb-3 border-bottom pb-2">
+                                    <i class="bi bi-key fs-4 text-indigo" style="color: var(--brand-primary);"></i>
+                                    <h5 class="mb-0 brand-font">Change Password</h5>
+                                </div>
+                                <p class="text-secondary small mb-3">Leave blank if you do not wish to update your current password.</p>
+                                
+                                <div class="form-group-custom">
+                                    <label class="form-label-custom" for="password-profile">New Password</label>
+                                    <div class="password-toggle-wrapper">
+                                        <input type="password" id="password-profile" class="form-control-custom password-input" placeholder="••••••••">
+                                        <button type="button" class="password-toggle-btn" aria-label="Toggle Password Visibility">
+                                            <i class="bi bi-eye-slash-fill"></i>
+                                        </button>
+                                    </div>
+                                    <div class="password-strength-container mt-2">
+                                        <div class="progress-custom" style="height: 6px;">
+                                            <div class="progress-bar-custom bg-danger" style="width: 0%; transition: all 0.3s ease;"></div>
+                                        </div>
+                                        <span id="strength-text" class="text-muted small mt-1 d-block" style="font-size: 0.75rem;">Password Strength: Weak</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-premium w-100 py-3">
+                                <i class="bi bi-check2-circle me-2"></i> Save Profile Settings
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Danger Zone Account Deletion -->
+                <div class="row mt-5 pt-4 animate-entrance delay-3 justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="border-top border-danger border-opacity-25 pt-4">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                <div>
+                                    <h6 class="text-danger mb-1 brand-font small d-flex align-items-center gap-2">
+                                        <i class="bi bi-exclamation-triangle-fill"></i> Danger Zone
+                                    </h6>
+                                    <p class="text-secondary mb-0" style="font-size: 0.75rem;">Deleting your account is permanent. All logged expenses, category budgets, and personal reports will be permanently expunged.</p>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-outline-danger btn-sm px-3" data-bs-toggle="collapse" data-bs-target="#deleteAccountCollapse" aria-expanded="false" aria-controls="deleteAccountCollapse">
+                                        <i class="bi bi-trash"></i> Delete Account...
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="collapse mt-3" id="deleteAccountCollapse">
+                                <div class="p-3 border rounded border-danger bg-danger-subtle bg-opacity-10 mx-auto" style="max-width: 500px; background-color: rgba(239, 68, 68, 0.05);">
+                                    <form novalidate>
+                                        <div class="form-group-custom mb-3">
+                                            <label class="form-label-custom text-danger small" for="delete-password-confirm" style="color: var(--brand-danger);">Confirm Password</label>
+                                            <div class="password-toggle-wrapper">
+                                                <input type="password" id="delete-password-confirm" class="form-control-custom password-input border-danger" placeholder="••••••••" required>
+                                                <button type="button" class="password-toggle-btn" aria-label="Toggle Password Visibility">
+                                                    <i class="bi bi-eye-slash-fill"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-danger btn-sm w-100 py-2 fw-semibold">
+                                            <i class="bi bi-shield-alert me-2"></i> Permanently Delete Account
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 3. Mobile Responsive Bottom Navigation (Only visible to authenticated users on smaller viewports) -->
+    <nav class="bottom-nav d-flex d-lg-none d-none" aria-label="Mobile Bottom Nav">
+        <a href="#/dashboard" class="bottom-nav-item active">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="#/expenses" class="bottom-nav-item">
+            <i class="bi bi-cash-stack"></i>
+            <span>Expenses</span>
+        </a>
+        <button class="bottom-nav-item open-expense-modal-btn border-0 bg-transparent" style="position: relative;">
+            <i class="bi bi-plus-circle-fill" style="font-size: 1.5rem; color: var(--brand-primary) !important;"></i>
+            <span>Add</span>
+        </button>
+        <a href="#/reports" class="bottom-nav-item">
+            <i class="bi bi-pie-chart"></i>
+            <span>Charts</span>
+        </a>
+        <a href="#/profile" class="bottom-nav-item">
+            <i class="bi bi-person-gear"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <!-- Global Quick Add Expense Modal Dialog -->
+    <div class="modal-custom" id="expenseModal">
+        <div class="modal-dialog-custom">
+            <div class="modal-header-custom">
+                <h5 class="modal-title brand-font mb-0"><i class="bi bi-cash me-2"></i> Record Expenditure</h5>
+                <button type="button" class="modal-close-btn close-expense-modal-btn">&times;</button>
+            </div>
+            
+            <form>
+                <div class="modal-body-custom">
+                    <div class="row">
+                        <div class="col-7">
+                            <div class="form-group-custom">
+                                <label class="form-label-custom" for="modal-amount">Amount</label>
+                                <input type="number" step="0.01" min="0.01" name="amount" id="modal-amount" class="form-control-custom" placeholder="₹0.00" required>
+                            </div>
+                        </div>
+                        <div class="col-5">
+                            <div class="form-group-custom">
+                                <label class="form-label-custom" for="modal-currency">Currency</label>
+                                <select name="currency" id="modal-currency" class="form-control-custom select-custom" style="padding-top: 13px; padding-bottom: 13px; height: auto;">
+                                    <option value="USD">USD ($)</option>
+                                    <option value="EUR">EUR (€)</option>
+                                    <option value="GBP">GBP (£)</option>
+                                    <option value="INR" selected>INR (₹)</option>
+                                    <option value="JPY">JPY (¥)</option>
+                                    <option value="AUD">AUD (A$)</option>
+                                    <option value="CAD">CAD (C$)</option>
+                                    <option value="CNY">CNY (¥)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group-custom">
+                        <label class="form-label-custom" for="modal-category">Category</label>
+                        <select name="category" id="modal-category" class="form-control-custom select-custom" style="padding-top: 13px; padding-bottom: 13px; height: auto;" required>
+                            <option value="Food">🍔 Food</option>
+                            <option value="Travel">✈️ Travel</option>
+                            <option value="Shopping">🛍️ Shopping</option>
+                            <option value="Bills">💡 Bills</option>
+                            <option value="Entertainment">🎬 Entertainment</option>
+                            <option value="Healthcare">🏥 Healthcare</option>
+                            <option value="Education">📚 Education</option>
+                            <option value="Others">📦 Others</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group-custom">
+                        <label class="form-label-custom" for="modal-description">Description</label>
+                        <input type="text" name="description" id="modal-description" class="form-control-custom" placeholder="Enter notes...">
+                    </div>
+                    
+                    <div class="form-group-custom">
+                        <label class="form-label-custom" for="modal-date">Date</label>
+                        <input type="date" name="date" id="modal-date" class="form-control-custom" required>
+                    </div>
+                    
+                    <button type="submit" class="btn-premium w-100 py-3 mt-3">Save Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Bootstrap 5 JS Bundle, Chart.js, SheetJS (Excel) and jsPDF (PDF) CDNs -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf-autotable.min.js"></script>
+    
+    <!-- Local SPA Interactivity Engine -->
+    <script src="static/js/main.js"></script>
+    <script src="static/js/app-local.js"></script>
+</body>
+</html>

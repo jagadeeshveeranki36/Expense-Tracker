@@ -173,7 +173,7 @@ function setupAvatarGrid() {
                 }
                 
                 if (selectedAvatarDisplay) {
-                    selectedAvatarDisplay.src = `/static/images/${avatarFile}`;
+                    selectedAvatarDisplay.src = `static/images/${avatarFile}`;
                 }
             });
         });
