@@ -148,3 +148,18 @@ docker-compose ps
 docker-compose down
 ```
 Once launched, the containerized application will be live at `http://localhost:5000/`.
+
+---
+
+## 🌐 Deploying to GitHub Pages (Static SPA)
+
+We have converted this project to support a fully client-side Single Page Application (SPA) mode utilizing `localStorage` for database state, allowing it to be hosted on static platforms like **GitHub Pages** with zero configuration!
+
+To enable the live static website on GitHub Pages:
+1. Go to your repository on GitHub: `https://github.com/jagadeeshveeranki36/Expense-Tracker`.
+2. Click on the **Settings** tab.
+3. In the left-hand menu, navigate to **Pages** under the "Code and automation" section.
+4. Under **Build and deployment**, verify that **Source** is set to **Deploy from a branch**.
+5. Set the **Branch** to `main` and select `/ (root)` folder, then click **Save**.
+6. GitHub Pages will build and deploy your site in 1–2 minutes! Your application will be live at `https://jagadeeshveeranki36.github.io/Expense-Tracker/`.
+
